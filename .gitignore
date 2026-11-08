@@ -1,5 +1,11 @@
-.venv/
-venv/
-.ipynb_checkpoints/
+# Large raw/cleaned data: stays on Google Drive, too big for GitHub
+housing_*.csv
+housing_clean.parquet
+transport_*.csv
+transport_clean.parquet
+
+# Python / VS Code clutter
 __pycache__/
-.env
+.ipynb_checkpoints/
+.venv/
+.DS_Store
