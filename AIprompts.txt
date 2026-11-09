@@ -1,0 +1,300 @@
+AI PROMPTS USED – MEMBER 1 (Layla)
+Role: data pipeline (loading, EDA, cleaning, integration, website export), Q1, Q7, team integration and website
+AI tool: Claude (Anthropic) · 3–9 November 2026
+
+These are the prompts that shaped the project, in order. Spelling and capitalisation were corrected;
+the wording is unchanged. [Brackets] describe attachments or pasted content. Short follow-ups
+("yes", "ok") and repeated error pastes are summarised rather than listed one by one.
+Every AI output was run in Colab and checked against the printed results before it was kept.
+
+----------------------------------------------------------------------
+1. PLANNING AND DATASET CHOICE
+----------------------------------------------------------------------
+P1. [Attached: Project Description.pdf, Data Catalog.pdf]
+    "Study the project description very well and explain step by step the logic and what exactly we
+    should do. Tell me if you need anything and tell me what apps we'll use."
+    Purpose: break the brief into steps and choose the tools before starting.
+
+P2. [Screenshot: NYC Open Data export dialog showing 16,434,951 rows]
+    "What should I do?"
+    Purpose: decide how to handle a dataset too large to download (led to filtered API loading).
+
+P3. "Yes, we chose T4."
+    Decision: Housing Maintenance Complaints (H6) + SIRTA Crashes (T4), linked by geography and date.
+
+----------------------------------------------------------------------
+2. DATA LOADING
+----------------------------------------------------------------------
+P4. [Pasted output: housing column list and 2024 row count]
+    "That's the output, is it correct?"
+    Purpose: verify the API returned the expected columns and row count before loading everything.
+
+P5. [Pasted errors during loading, one at a time: CSV ParserError, KeyError on the count query,
+    "Service unavailable", read timeouts]
+    Purpose: diagnose each failure. Outcome: switched to JSON, fixed pagination so no rows are skipped,
+    added automatic retries and a row-count check for every download.
+
+P6. "Give me the full cell code for T4 only."
+    Purpose: keep each dataset in its own, self-contained loading cell.
+
+P7. [Pasted output: crashes per year, 2022–2026]
+    Purpose: choose the time window. Decision: 2022–2025 (four complete years; 2026 is partial).
+
+P8. "Was there another way that takes less time?"
+    Purpose: evaluate alternatives (server-side aggregation, parallel or sampled downloads).
+    Decision: keep the raw download, because cleaning needs the raw records; documented as an
+    alternative considered.
+
+----------------------------------------------------------------------
+3. EDA, CLEANING AND INTEGRATION
+----------------------------------------------------------------------
+P9. [Attached: notebook with EDA outputs]
+    "Here are the outputs."
+    Purpose: base every cleaning decision on the actual EDA findings.
+
+P10. "How is this different than step 2? Wasn't step 2 the data cleaning one?"
+     Purpose: separate EDA (diagnosis, no changes) from cleaning (fixing the problems found).
+
+P11. [Quoted: "replaced columns"]
+     "Elaborate."
+     Purpose: justify dropping original columns only after their cleaned versions existed.
+
+P12. [Attached: cleaning outputs]
+     "Here you go, the outputs you need."
+     Purpose: validate the location-recovery method (93.3% ZIP and 91.4% district agreement)
+     before integrating.
+
+P13. [Attached: notebook with integration outputs]
+     "Here are all the outputs, check if this is correct."
+     Purpose: confirm totals were preserved through the merge (236 district-years, no lost records).
+
+----------------------------------------------------------------------
+4. RESEARCH QUESTIONS AND TEAM COORDINATION
+----------------------------------------------------------------------
+P14. "Tell me the 12 research questions that we'll choose from."
+     Purpose: draft 12 questions (6 cross-domain, 3 housing, 3 transport) based on the cleaned data.
+
+P15. "Can you make a PDF of all the research questions and make a quick description how to do it,
+     to send it to my teammates?"
+     Purpose: give all six members one guide with shared rules (Plotly functions, website-safe data,
+     answers backed by output), so the work could be merged without rewriting.
+
+P16. "Can we make the website before they send their parts or not?"
+     Purpose: plan the work in parallel. Outcome: website-safe data tables exported first, so every
+     member's chart runs unchanged on the website.
+
+P17. "Do Member 1 now before making the website: Q1 and Q7."
+     [Followed by the Q1 and Q7 outputs]
+     Purpose: complete my own questions and write the answers from the printed numbers.
+
+----------------------------------------------------------------------
+5. REVIEWING AND MERGING TEAMMATES' WORK
+----------------------------------------------------------------------
+P18. [Attached: Member 4, Member 2, Member 3, Member 5 and Member 6 notebooks, one at a time]
+     "Is this correct to merge?" / "Check this." / "Check."
+     Purpose: review each member's code and answers before merging. Outcome: added missing
+     "numbers" cells so every claim in an answer is backed by visible output, corrected one figure
+     in Q2 (38.5 vs 45.8), and completed the borough comparison in Q8.
+
+P19. "Here are the outputs, make the md cells. And also here's Member 6, please check."
+     Purpose: turn template answers into final answers based on the actual outputs.
+
+P20. "No, can you group it by member?"
+     Purpose: organise Section 7 so each member's contribution is easy to identify.
+
+----------------------------------------------------------------------
+6. VERSION CONTROL, WEBSITE AND DEPLOYMENT
+----------------------------------------------------------------------
+P21. "Right now I'm connecting VS Code with GitHub. I was working on Colab at first, then realised we
+     need to make a repo so everyone could have access and edit. However, when I open the notebook on
+     VS Code and push it to the GitHub repo, the whole project is in one single file. I don't know if
+     that's correct or what I should do."
+     Purpose: set up a proper repository structure (notebook, website, data, requirements, README)
+     and a team workflow that avoids notebook merge conflicts.
+
+P22. "Make the website now and tell me step by step what to do."
+     Purpose: build the Dash website (filters, search mode, Generate Report button, story section)
+     and deploy it on Render.
+
+P23. "The website is very bad, make it more modern and make it actually work."
+     Purpose: redesign the layout (sidebar, tabs, shared chart theme), make it faster on the free
+     server, and fix the map tiles.
+
+P24. [Screenshots: map tiles blocked, then "API key required"]
+     Purpose: replace two map providers that failed with a free basemap that needs no API key.
+
+
+
+
+Member 2 – AI prompt log (Q2 and Q10)
+Tool: Claude (claude.ai), 8–9 November 2026
+
+Prompts used, in order (wording lightly tidied, meaning unchanged):
+
+1. "We are working on a data engineering project as a team of six and I am Member 2.
+   Here are the datasets and our Colab notebook. Give me a step-by-step guide of what
+   I need to do and provide the working code." (Research Questions Guide PDF attached)
+   → Step-by-step plan and first draft of build_q2 / build_q10.
+
+2. "I have the repo: <team GitHub repo link>"
+   → Claude could not access it (private repo).
+
+3. "I connected Claude to GitHub." / "Should I clone the repo and send it to you?"
+   → Still no access; asked for the data files or the team notebook instead.
+
+4. "This is the only thing on the repo." (team notebook DataEngineering.ipynb attached)
+   → Code rewritten to match the team notebook's column names, chart style and cell layout.
+
+5. "What files from the Google Drive do you need me to send you?"
+   → integrated_cd_year.csv and crashes.parquet.
+
+6. Uploaded integrated_cd_year.csv and crashes.parquet.
+   → Q2 and Q10 run on the real data; numbers filled into the answer cells.
+
+7. "I want a new notebook with everything related only to me."
+   → Standalone notebook (setup + Q2 + Q10).
+
+8. "I keep getting an error because I uploaded the two files to Colab, not Drive."
+   → Setup cell changed to load the files from /content.
+
+9. "What am I supposed to do on GitHub?"
+   → Hand-in steps (send to Layla; optional pull request).
+
+My own work (fill in):
+- Ran the notebook in Colab and checked that it runs top to bottom: [yes / date]
+- Checked the charts and the numbers in the answer cells against the output: [...]
+- Changes I made to the code or text myself: [...]
+
+
+AI PROMPTS LOG - Member 3 (Malak)
+Data Engineering & Visualization - Milestone 1
+NYC Housing Maintenance Complaints (H6) x Serious Crashes (T4)
+AI tool used: Claude (Anthropic)
+Questions owned: Q3 (Growth vs growth) and Q11 (Most dangerous corridors)
+=====================================================================
+
+1. Planning my part
+   Prompt: (Shared the project description, Milestone 1 Work Plan, Research
+   Questions Guide, the Drive folder and the GitHub repo link)
+   "2 research questions and their charts. We are done with the data loading
+   and cleaning. The drive link has the cleaned data sets. I am member 3 and I
+   want you to organize my work and tell me what I should do exactly step by
+   step in a very simple way."
+   Used for: identifying my questions (Q3 and Q11) and a step-by-step plan.
+
+2. Understanding the plan
+   Prompt: "I want to know what we are doing exactly and state why and what
+   we are doing within each step."
+   Used for: understanding the purpose of each step (setup, Q3, Q11,
+   checking, sending).
+
+3. Google Drive and Colab setup
+   Prompts: "Can we move step by step, start with step 1 and tell me what to
+   do." / "What is the shortcut?" / "Where should I get this [the team
+   notebook]?" / "How to rename the notebook?" / "What should I do in the
+   notebook I created?"
+   Used for: adding a Drive shortcut to DEV_project_data, removing a duplicate
+   shortcut, creating my own Colab notebook, and loading the data files.
+
+4. Fixing an error
+   Prompt: (Shared a screenshot of the error "ValueError: mount failed")
+   Used for: fixing the Google Drive mount by restarting the runtime and
+   granting all permissions.
+
+5. Q3 - Growth vs growth (housing problems vs serious crashes, 2022-2025)
+   Prompts: (Shared screenshots of the chart and the printed output) "What's
+   next?"
+   Used for: writing the build_q3 function (pivot to 2022/2025, % change,
+   scatter plot with quadrant lines), a helper cell to count districts in each
+   quadrant and compute the correlation, and writing the answer cell from my
+   output numbers.
+
+6. Q11 - Most dangerous corridors
+   Prompts: "Next" (Shared screenshots of the chart and the printed table)
+   Used for: writing the build_q11 function (cleaning street names, top 10
+   streets, stacked bar by year), fixing a cleaning issue I noticed in the
+   chart ("GRAND CENTRAL PKWY" not merged with "PARKWAY"), a helper cell for
+   yearly counts per street, and writing the answer cell from my output
+   numbers.
+
+7. Understanding the code and results
+   Prompts: "I want you to identify each part and move step by step explaining
+   what we are doing and stating why the result appeared like that." / "So Q3
+   checks if by having bigger districts we will have bigger problems or
+   crashes?"
+   Used for: line-by-line explanations of the data loading, the Q3 question,
+   and the build_q3 function, and why the outputs looked the way they did.
+AI PROMPTS USED - MEMBER 4 (Q4 and Q8)
+Tool: Claude (Anthropic), chat interface
+Project: NYC Housing Complaints x SIRTA Serious Crashes, DEV Milestone 1
+
+Messages sent to the AI, in order. Screenshots are described in [brackets].
+
+1. [Uploaded Research_Questions_Guide.pdf] "do the research questions for member 4"
+2. [Uploaded Project_Description.pdf and shared the Google Drive folder link for DEV_project_data]
+3. "and i need to do a clone from the github repo"
+4. Shared the repo link: laylllllllllllla/DataEngineeringProject
+5. "can i do it on vscode"
+6. "should i do this in the terminal"
+7. "i finished these what should i do after"
+8. "can you do all of this for me"
+9. "what should i do now tell me in steps"
+10. "which file card"
+11. "yes"
+12. "im using vs code"
+13. "tell me in steps one by one i wanna do it on vs code"
+14. "i cant find DataEngineeringProject"
+15. "i will do it on terminal"
+16. [Screenshot: VS Code terminal after git clone, showing ls output]
+17. "i can see them"
+18. "i saw switched"
+19. "done what else"
+20. "how can i rename it and save it"
+21. [Screenshot: Save As window]
+22. "yes i see it"
+23. [Screenshot: Select Python Environment list]
+24. [Screenshot: ModuleNotFoundError for plotly]
+25. [Screenshot: pip install output for Python 3.13]
+26. [Screenshot: test cell printing "ok"]
+27. "I PUT THEM INTO A FOLDER WHATS NEXT"
+28. [Screenshot: error, No such file or directory]
+29. "i saved them info a folder on the desk top called DATA ENGGG"
+30. [Screenshot: FileNotFoundError for Desktop path]
+31. [Screenshot: terminal search result showing the OneDrive Desktop path]
+32. [Screenshot: both files loaded, shapes and column names]
+33. [Screenshot: Q4 chart]
+34. [Screenshot: printed Q4 numbers]
+35. "what should i do ii dont understand"
+36. [Screenshot: Q4 answer cell added]
+37. [Screenshot: Q8 chart and printed type/borough values]
+38. Pasted the printed Q8 emergency-share table (all boroughs and Bronx)
+39. "done"
+40. "done"
+41. "done"
+42. "i cant movr it"
+43. "should q4 be under or above chart"
+44. "can it be under the chat"
+45. "above the chart above th code too?"
+46. [Screenshot: Q4 question above the Q4 code cell] "here?"
+47. "i made them in right order"
+48. "all done"
+49. [Screenshot: IndentationError in the Q8 cell]
+50. "can you send the whole code and let me copy paste"
+51. "done"
+52. "done"
+53. [Screenshot: git status and commit output]
+54. [Screenshot: git log output]
+55. Pasted the git push output
+56. "what should i put in description"
+57. "can you make a text file containing the prompts i sent to you"
+
+WHAT THE AI PRODUCED
+- Code for build_q4() (dual-axis line chart) and build_q8() (100% stacked bar)
+- Draft question and answer text for Q4 and Q8 (answer numbers came from my own data output)
+- Step-by-step help with Git, VS Code, Python setup and file paths
+Member 5 AI prompts
+i cloned the project and i am member 5 and i want to add my cells , tell me where to add my code cells, in a seperate folder or what and what to write in every code cell
+
+AI prompts used (Member 6: Q6 and Q9)
+"I am member 6" plus the Research Questions Guide PDF and the DataEngineering notebook; asked Claude to complete my assigned questions (Q6 borough share gap, Q9 multi-problem neighbourhoods).
+Claude wrote build_q6, build_q9, their helper functions and the markdown/answer cells, following the guide's rules and the style of the Q1 cells already in the notebook. The bracketed numbers in the answer cells are filled in by me from the helper output after running the cells in Colab
