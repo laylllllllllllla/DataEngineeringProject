@@ -1,0 +1,84 @@
+:root {
+  --ink: #1f2933;
+  --muted: #5f6b7a;
+  --line: #dde2e8;
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --accent: #2557a7;
+  --accent-dark: #1b4285;
+  --warm: #b5562f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+.page { max-width: 1280px; margin: 0 auto; padding: 0 20px 48px; }
+
+/* Header */
+.hero { padding: 40px 0 24px; }
+.eyebrow { margin: 0; color: var(--warm); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+.hero h1 { margin: 6px 0 10px; font-size: 40px; line-height: 1.1; letter-spacing: -.01em; }
+.lede { margin: 0; max-width: 760px; color: var(--muted); font-size: 17px; }
+
+/* Controls panel */
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(31, 41, 51, .05); }
+.search-row { display: flex; gap: 10px; }
+.search { flex: 1; min-width: 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; }
+.search:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.feedback { min-height: 20px; margin: 6px 2px 10px; font-size: 13px; color: var(--muted); }
+.controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.control label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
+.generate-row { display: flex; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: 13px; flex: 1; min-width: 240px; }
+
+button { font: inherit; cursor: pointer; border-radius: 8px; }
+.btn-primary { background: var(--accent); color: #fff; border: 0; padding: 11px 22px; font-weight: 600; font-size: 15px; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); padding: 9px 16px; font-weight: 600; white-space: nowrap; }
+.btn-secondary:hover { background: #eef3fb; }
+
+/* Report */
+.caption { margin: 22px 2px 10px; color: var(--muted); font-size: 14px; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.kpi-value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-label { color: var(--muted); font-size: 13px; }
+
+.section-title { margin: 34px 2px 12px; font-size: 22px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.card.wide { margin-top: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.card h3 { margin: 0; font-size: 16px; }
+.owner { flex-shrink: 0; font-size: 11px; color: var(--muted); background: var(--bg); border-radius: 999px; padding: 2px 8px; }
+.note { margin: 4px 0 6px; color: var(--muted); font-size: 13px; }
+
+/* Story */
+.story { margin-top: 40px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+.story h2 { margin: 0 0 14px; font-size: 24px; }
+.story-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.story-block h3 { margin: 0 0 6px; font-size: 16px; color: var(--accent); }
+.story-block p, .story-block li { font-size: 14px; }
+.story-block ul { margin: 0; padding-left: 18px; }
+.sources { margin: 20px 0 0; font-size: 13px; color: var(--muted); }
+.sources a { color: var(--accent); }
+
+/* Phones and small screens */
+@media (max-width: 900px) {
+  .controls, .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid, .story-grid { grid-template-columns: 1fr; }
+  .panel { position: static; }
+}
+@media (max-width: 520px) {
+  .page { padding: 0 16px 32px; }
+  .hero h1 { font-size: 30px; }
+  .search-row { flex-direction: column; }
+  .controls, .kpis { grid-template-columns: 1fr; }
+}
