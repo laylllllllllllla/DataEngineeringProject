@@ -5,8 +5,8 @@ Every function takes already-filtered data frames (the website applies the Borou
 before calling it) and RETURNS a Plotly figure. The same functions are used in the notebook.
 
 Q1, Q7        Member 1        Q4, Q8   Member 4
-Q2, Q10       Member 2        Q5, Q12  Member 5  (provisional version below until the member's arrives)
-Q3, Q11       Member 3        Q6, Q9   Member 6  (provisional version below until the member's arrives)
+Q2, Q10       Member 2        Q5, Q12  Member 5
+Q3, Q11       Member 3        Q6, Q9   Member 6
 """
 import numpy as np
 import pandas as pd
@@ -63,6 +63,8 @@ def build_overview(df_housing_monthly, df_crashes, category_label, metric):
                       legend=dict(orientation='h', y=-0.2))
     fig.update_yaxes(title_text='Housing problems', secondary_y=False, rangemode='tozero')
     fig.update_yaxes(title_text=CRASH_METRICS[metric], secondary_y=True, rangemode='tozero')
+    fig.update_xaxes(type='category')   # years as labels, not 2022.5
+    fig.update_layout(margin=dict(l=70, r=70, t=50, b=40))
     return fig
 
 
@@ -237,53 +239,102 @@ def build_q4(df_housing_monthly, df_crashes):
 
 
 # ======================================================================
-# Q5 (Member 5, provisional): Where in NYC do housing problems and serious crashes concentrate?
+# Q5 (Member 5): Where in NYC do housing problems and serious crashes concentrate?
 # ======================================================================
+MAP_LAYERS = [{   # free Esri light-grey street map (OpenStreetMap and Carto tiles are blocked / need a key)
+    'below': 'traces', 'sourcetype': 'raster',
+    'sourceattribution': 'Esri, HERE, Garmin, © OpenStreetMap contributors',
+    'source': ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/'
+               'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+}]
+
+
 def build_q5(df_integrated, df_centroids):
-    """Bubble map: one bubble per district, size = housing problems, colour = serious crashes."""
-    d = (df_integrated.groupby(['cd_id', 'cd_label'], as_index=False)[['housing_problems', 'crashes']].sum()
-         .merge(df_centroids[['cd_id', 'latitude', 'longitude']], on='cd_id', how='inner'))
+    """Q5: Map of housing problems (bubble size) and serious crashes (colour) per community district."""
+    d = (df_integrated.groupby('cd_id', as_index=False)
+         [['housing_problems', 'crashes']].sum())
+    d = d.merge(df_centroids[['cd_id', 'cd_label', 'borough', 'latitude', 'longitude']],
+                on='cd_id', how='inner')
     if d.empty:
         return message_figure('No districts for this selection.')
-    d['crashes_per_10k_problems'] = (d['crashes'] / d['housing_problems'].replace(0, np.nan) * 10_000).round(1)
+    d['crashes_per_10k_problems'] = (
+        d['crashes'] / d['housing_problems'].replace(0, np.nan) * 10_000
+    ).round(1)
     fig = px.scatter_mapbox(
-        d, lat='latitude', lon='longitude', size='housing_problems', color='crashes',
-        color_continuous_scale='Reds', size_max=38, zoom=9.3, center={'lat': 40.71, 'lon': -73.94},
+        d, lat='latitude', lon='longitude',
+        size='housing_problems', color='crashes',
         hover_name='cd_label',
-        hover_data={'latitude': False, 'longitude': False, 'housing_problems': ':,', 'crashes': ':,',
-                    'crashes_per_10k_problems': True},
+        hover_data={'borough': True, 'housing_problems': ':,', 'crashes': ':,',
+                    'crashes_per_10k_problems': True, 'latitude': False, 'longitude': False},
+        color_continuous_scale='YlOrRd', size_max=35,
+        zoom=9.8, center={'lat': 40.71, 'lon': -73.94},
+        title='Where housing problems and serious crashes concentrate (by community district)',
         labels={'housing_problems': 'Housing problems', 'crashes': 'Serious crashes',
-                'crashes_per_10k_problems': 'Crashes per 10k problems'},
-        title='Q5. Where both burdens concentrate (bubble size = housing problems, colour = serious crashes)')
-    fig.update_layout(mapbox_style='open-street-map', height=560, margin=dict(l=0, r=0, t=50, b=0))
+                'crashes_per_10k_problems': 'Crashes per 10k problems', 'borough': 'Borough'},
+    )
+    fig.update_layout(height=600, margin=dict(l=0, r=0, t=50, b=0),
+                      mapbox_style='white-bg', mapbox_layers=MAP_LAYERS)
     return fig
 
 
-# ======================================================================
-# Q6 (Member 6, provisional): Borough share of housing problems vs share of serious crashes
-# ======================================================================
+# ============================================================
+# Q6 (Member 6): How does each borough's share of housing problems compare with its share of serious crashes?
+# ============================================================
+def borough_share_table(df_integrated):
+    """Borough totals, each borough's share of the NYC total, and the gap in percentage points."""
+    d = df_integrated.groupby('borough', as_index=False)[['housing_problems', 'crashes']].sum()
+    d['housing_share'] = d['housing_problems'] / d['housing_problems'].sum() * 100
+    d['crash_share']   = d['crashes'] / d['crashes'].sum() * 100
+    d['gap_pp']        = d['crash_share'] - d['housing_share']
+    d['Borough']       = d['borough'].str.title()
+    return d.sort_values('gap_pp').reset_index(drop=True)
+
+
 def build_q6(df_integrated):
-    """Diverging bar: share of NYC serious crashes minus share of NYC housing problems, per borough."""
-    b = df_integrated.groupby('borough')[['housing_problems', 'crashes']].sum()
-    if len(b) < 2:
-        return message_figure('Q6 compares boroughs: select "All boroughs".')
-    b['housing_share'] = b['housing_problems'] / b['housing_problems'].sum() * 100
-    b['crash_share'] = b['crashes'] / b['crashes'].sum() * 100
-    b['gap'] = b['crash_share'] - b['housing_share']
-    b = b.sort_values('gap').reset_index()
-    b['Borough'] = b['borough'].str.title()
-    b['direction'] = np.where(b['gap'] >= 0, 'More crash burden', 'More housing burden')
-    fig = px.bar(b, x='gap', y='Borough', orientation='h', color='direction',
-                 color_discrete_map={'More crash burden': '#2557a7', 'More housing burden': '#b5562f'},
-                 custom_data=['housing_share', 'crash_share'],
-                 labels={'gap': 'Share of serious crashes − share of housing problems (percentage points)',
-                         'Borough': '', 'direction': ''},
-                 title='Q6. Borough share gap: share of NYC serious crashes minus share of housing problems')
-    fig.update_traces(hovertemplate='<b>%{y}</b><br>Gap: %{x:+.1f} pts<br>Housing share: %{customdata[0]:.1f}%'
-                                    '<br>Crash share: %{customdata[1]:.1f}%<extra></extra>')
-    fig.add_vline(x=0, line_color='black', line_width=1)
-    fig.update_layout(template='plotly_white', height=400, legend=dict(orientation='h', y=-0.25))
+    """Diverging bar of the share gap (left) and the two shares side by side (right)."""
+    d = borough_share_table(df_integrated)
+    if d.empty:
+        return px.bar(title='Q6. No data for the selected filters')
+
+    fig = make_subplots(rows=1, cols=2, column_widths=[0.5, 0.5], horizontal_spacing=0.18,
+                        subplot_titles=('Gap: crash share minus housing share',
+                                        'Share of NYC total, side by side'))
+    custom = d[['housing_problems', 'crashes', 'housing_share', 'crash_share']].to_numpy()
+
+    # Left: diverging gap (red = more crash burden than housing burden, blue = the opposite)
+    fig.add_trace(go.Bar(
+        y=d['Borough'], x=d['gap_pp'], orientation='h', showlegend=False,
+        marker_color=np.where(d['gap_pp'] >= 0, '#c0392b', '#2557a7'),
+        text=[f'{v:+.1f} pp' for v in d['gap_pp']], textposition='outside', cliponaxis=False,
+        customdata=custom,
+        hovertemplate=('<b>%{y}</b><br>Gap: %{x:+.1f} pp<br>'
+                       'Housing share: %{customdata[2]:.1f}% (%{customdata[0]:,.0f} problems)<br>'
+                       'Crash share: %{customdata[3]:.1f}% (%{customdata[1]:,.0f} crashes)<extra></extra>')),
+        row=1, col=1)
+    fig.add_vline(x=0, line_color='black', line_width=1, row=1, col=1)
+
+    # Right: the two shares as grouped bars
+    for col, name, colour in [('housing_share', 'Share of housing problems', '#7f8c8d'),
+                              ('crash_share', 'Share of serious crashes', '#c0392b')]:
+        fig.add_trace(go.Bar(
+            y=d['Borough'], x=d[col], orientation='h', name=name, marker_color=colour,
+            text=[f'{v:.1f}%' for v in d[col]], textposition='outside', cliponaxis=False,
+            customdata=custom,
+            hovertemplate=('<b>%{y}</b><br>' + name + ': %{x:.1f}%<br>'
+                           'Housing problems: %{customdata[0]:,.0f}<br>'
+                           'Serious crashes: %{customdata[1]:,.0f}<extra></extra>')),
+            row=1, col=2)
+
+    gmax = max(abs(d['gap_pp']).max(), 1) * 1.5
+    fig.update_xaxes(title_text='Gap (percentage points)', range=[-gmax, gmax], row=1, col=1)
+    fig.update_xaxes(title_text='% of NYC total', range=[0, d[['housing_share', 'crash_share']].max().max() * 1.2],
+                     row=1, col=2)
+    fig.update_yaxes(title_text='Borough', row=1, col=1)
+    fig.update_layout(barmode='group', height=450,
+                      title='Q6. Borough share of housing problems vs share of serious crashes',
+                      legend=dict(orientation='h', y=-0.2, x=0.55))
     return fig
+
 
 
 # ======================================================================
@@ -381,30 +432,42 @@ def build_q8_borough(df_housing_monthly):
     return fig
 
 
-# ======================================================================
-# Q9 (Member 6, provisional): Which neighbourhoods have the most multi-problem complaints?
-# ======================================================================
-def build_q9(df_housing_nta):
-    """Horizontal bar: top 15 neighbourhoods by average problems per complaint."""
-    n_years = max(df_housing_nta['year'].nunique(), 1)
-    min_complaints = 125 * n_years   # = 500 over 4 years; scales down when one year is selected
-    d = df_housing_nta.groupby(['nta', 'borough'], as_index=False)[['problems', 'complaints']].sum()
-    d = d[d['complaints'] >= min_complaints]
-    if d.empty:
-        return message_figure('Too few complaints for this selection.')
-    d['problems_per_complaint'] = d['problems'] / d['complaints']
-    d = d.nlargest(15, 'problems_per_complaint').sort_values('problems_per_complaint')
+# ============================================================
+# Q9 (Member 6): Which neighbourhoods have the most multi-problem complaints?
+# ============================================================
+MIN_COMPLAINTS = 500
+
+def multi_problem_table(df_housing_nta, min_complaints=MIN_COMPLAINTS):
+    """Problems, complaints and average problems per complaint per neighbourhood (NTA)."""
+    d = (df_housing_nta.groupby(['nta', 'borough'], as_index=False)[['problems', 'complaints']].sum())
+    d = d[d['complaints'] >= min_complaints].copy()
+    d['avg_problems_per_complaint'] = d['problems'] / d['complaints']
     d['Borough'] = d['borough'].str.title()
-    fig = px.bar(d, x='problems_per_complaint', y='nta', color='Borough', orientation='h',
-                 color_discrete_map=BOROUGH_COLORS, custom_data=['complaints', 'problems'],
-                 labels={'problems_per_complaint': 'Average problems per complaint', 'nta': ''},
-                 title=f'Q9. Neighbourhoods with the most multi-problem complaints '
-                       f'(min. {min_complaints:,} complaints)')
-    fig.update_traces(hovertemplate='<b>%{y}</b><br>%{x:.2f} problems per complaint'
-                                    '<br>Complaints: %{customdata[0]:,}<br>Problems: %{customdata[1]:,}<extra></extra>')
-    fig.update_layout(template='plotly_white', height=520,
-                      yaxis=dict(categoryorder='array', categoryarray=d['nta'].tolist()))
+    return d.sort_values('avg_problems_per_complaint', ascending=False).reset_index(drop=True)
+
+
+def build_q9(df_housing_nta):
+    """Horizontal bar of the 15 neighbourhoods with the most problems per complaint."""
+    d = multi_problem_table(df_housing_nta).head(15)
+    if d.empty:
+        return px.bar(title=f'Q9. No neighbourhood has at least {MIN_COMPLAINTS} complaints for the selected filters')
+
+    fig = px.bar(
+        d.iloc[::-1], x='avg_problems_per_complaint', y='nta', color='Borough', orientation='h',
+        color_discrete_map=BOROUGH_COLORS,
+        custom_data=['problems', 'complaints'],
+        text=d.iloc[::-1]['avg_problems_per_complaint'].round(2),
+        labels={'avg_problems_per_complaint': 'Average problems per complaint',
+                'nta': 'Neighbourhood'},
+        title=f'Q9. Neighbourhoods with the most problems per complaint (min. {MIN_COMPLAINTS} complaints)')
+    fig.update_traces(textposition='outside', cliponaxis=False,
+                      hovertemplate=('<b>%{y}</b><br>Avg problems per complaint: %{x:.2f}<br>'
+                                     'Problems: %{customdata[0]:,.0f}<br>'
+                                     'Complaints: %{customdata[1]:,.0f}<extra></extra>'))
+    fig.update_xaxes(range=[0, d['avg_problems_per_complaint'].max() * 1.12])
+    fig.update_layout(height=520, yaxis=dict(dtick=1), legend_title_text='Borough')
     return fig
+
 
 
 # ======================================================================
@@ -508,33 +571,42 @@ def build_q11(df_crashes):
 
 
 # ======================================================================
-# Q12 (Member 5, provisional): Are night crashes more severe than day crashes, by borough?
+# Q12 (Member 5): Are night crashes more severe than day crashes, and does that differ by borough?
 # ======================================================================
 def build_q12(df_crashes):
-    """Grouped bars: victims per crash and % of crashes with a death, day vs night, per borough."""
+    """Q12: Day vs night severity of serious crashes per borough (victims/crash and % fatal)."""
     d = df_crashes.dropna(subset=['crash_hour', 'borough']).copy()
     if d.empty:
         return message_figure('No crashes for this selection.')
-    d['period'] = np.where((d['crash_hour'] >= 20) | (d['crash_hour'] < 6), 'Night (20:00–05:59)', 'Day (06:00–19:59)')
-    d['fatal'] = d['total_fatalities'] > 0
-    g = (d.groupby(['borough', 'period'])
-          .agg(crashes=('total_victims', 'size'), victims=('total_victims', 'sum'), fatal=('fatal', 'sum'))
-          .reset_index())
-    g['victims_per_crash'] = g['victims'] / g['crashes']
-    g['fatal_%'] = g['fatal'] / g['crashes'] * 100
-    g['Borough'] = g['borough'].str.title()
-
-    colors = {'Day (06:00–19:59)': '#e3b04b', 'Night (20:00–05:59)': '#2d3a6b'}
-    fig = make_subplots(rows=1, cols=2, subplot_titles=('Victims per crash', '% of crashes with a death'))
-    for period, color in colors.items():
-        s = g[g['period'] == period]
-        for col, metric, fmt in ((1, 'victims_per_crash', '.2f'), (2, 'fatal_%', '.1f')):
-            fig.add_trace(go.Bar(x=s['Borough'], y=s[metric], name=period, marker_color=color,
-                                 showlegend=(col == 1), legendgroup=period, customdata=s[['crashes']].values,
-                                 hovertemplate='%{x}<br>' + period + ': %{y:' + fmt + '}'
-                                               '<br>Crashes: %{customdata[0]:,}<extra></extra>'),
-                          row=1, col=col)
-    fig.update_layout(barmode='group', template='plotly_white', height=440,
-                      title='Q12. Night vs day severity of serious crashes, by borough',
-                      legend=dict(orientation='h', y=-0.2))
+    is_night = (d['crash_hour'] >= 20) | (d['crash_hour'] < 6)
+    d['period'] = np.where(is_night, 'Night', 'Day')
+    d['has_fatality'] = d['total_fatalities'] > 0
+    g = (d.groupby(['borough', 'period'], as_index=False)
+           .agg(crashes=('has_fatality', 'size'),
+                victims=('total_victims', 'sum'),
+                fatal_crashes=('has_fatality', 'sum')))
+    g['victims_per_crash'] = (g['victims'] / g['crashes']).round(2)
+    g['fatal_pct'] = (g['fatal_crashes'] / g['crashes'] * 100).round(1)
+    boroughs = sorted(g['borough'].unique())
+    colors = {'Day': '#F2A541', 'Night': '#2E3A87'}
+    fig = make_subplots(rows=1, cols=2, subplot_titles=('Victims per crash', '% of crashes with a fatality'))
+    for period in ['Day', 'Night']:
+        p = g[g['period'] == period].set_index('borough').reindex(boroughs).reset_index()
+        hover = ('<b>%{x}</b> – ' + period +
+                 '<br>Crashes: %{customdata[0]:,}'
+                 '<br>Victims per crash: %{customdata[1]}'
+                 '<br>Fatal crashes: %{customdata[2]:,} (%{customdata[3]}%)<extra></extra>')
+        custom = p[['crashes', 'victims_per_crash', 'fatal_crashes', 'fatal_pct']].values
+        fig.add_trace(go.Bar(x=p['borough'], y=p['victims_per_crash'], name=period,
+                             marker_color=colors[period], customdata=custom,
+                             hovertemplate=hover, legendgroup=period), row=1, col=1)
+        fig.add_trace(go.Bar(x=p['borough'], y=p['fatal_pct'], name=period,
+                             marker_color=colors[period], customdata=custom,
+                             hovertemplate=hover, legendgroup=period, showlegend=False), row=1, col=2)
+    fig.update_layout(barmode='group', height=500,
+                      title='Night vs day severity of serious crashes by borough',
+                      legend_title_text='Time of day')
+    fig.update_xaxes(title_text='Borough')
+    fig.update_yaxes(title_text='Victims per crash', row=1, col=1)
+    fig.update_yaxes(title_text='Crashes with a fatality (%)', row=1, col=2)
     return fig

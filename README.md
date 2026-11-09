@@ -57,7 +57,7 @@ Then open http://127.0.0.1:8050.
 
 - New → Web Service → connect this GitHub repository
 - Build command: `pip install -r requirements.txt`
-- Start command: `gunicorn --chdir website app:server`
+- Start command: `gunicorn --chdir website app:server --timeout 180`
 - Environment variable: `PYTHON_VERSION` = `3.11.9`
 - Instance type: Free
 
