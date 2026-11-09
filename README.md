@@ -6,7 +6,7 @@ Do the neighbourhoods with the worst housing conditions also have the most dange
 We integrate NYC housing maintenance problems with serious traffic crashes across NYC's 59 community
 districts (2022–2025) and present the results in an interactive website.
 
-**Live website:** _add your Render link here_
+**Live website:** https://nyc-homestreets.onrender.com/
 
 ## Datasets
 
@@ -74,12 +74,12 @@ Then open http://127.0.0.1:8050.
 
 | Member | Name / ID | Contribution |
 |---|---|---|
-| 1 | _name, ID_ | Data loading, EDA, cleaning, integration, post-integration cleaning, website export; Q1, Q7; website |
-| 2 | _name, ID_ | Q2 (problem type vs crashes), Q10 (deadliest hours and days) |
-| 3 | _name, ID_ | Q3 (growth vs growth), Q11 (most dangerous corridors) |
-| 4 | _name, ID_ | Q4 (seasonal peaks), Q8 (emergency share by category) |
-| 5 | _name, ID_ | Q5 (map of both burdens), Q12 (night vs day severity) |
-| 6 | _name, ID_ | Q6 (borough share gap), Q9 (multi-problem neighbourhoods) |
+| 1 | layla hany, 16002144| Data loading, EDA, cleaning, integration, post-integration cleaning, website export; Q1, Q7; website |
+| 2 | farah habib, 16009887 | Q2 (problem type vs crashes), Q10 (deadliest hours and days) |
+| 3 | malak yousry , 16001972 | Q3 (growth vs growth), Q11 (most dangerous corridors) |
+| 4 | ahmed meselhy,13004739 | Q4 (seasonal peaks), Q8 (emergency share by category) |
+| 5 | mohamed elmekabbati, 16006349 | Q5 (map of both burdens), Q12 (night vs day severity) |
+| 6 | ziad hany, 13003098| Q6 (borough share gap), Q9 (multi-problem neighbourhoods) |
 
 ## AI usage
 
